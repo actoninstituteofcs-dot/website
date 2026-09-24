@@ -29,10 +29,31 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [testimonialPage, setTestimonialPage] = useState(0);
+  const [raised, setRaised] = useState(3260);
 
   useEffect(() => {
     const timer = window.setInterval(() => setTestimonialPage((page) => (page + 1) % 2), 6000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    function handleDonorboxMessage(event: MessageEvent) {
+      if (!event.origin.endsWith("donorbox.org")) return;
+
+      const payload = typeof event.data === "string" ? (() => {
+        try { return JSON.parse(event.data); } catch { return null; }
+      })() : event.data;
+      if (!payload || typeof payload !== "object") return;
+
+      const eventName = String(payload.type ?? payload.event ?? payload.name ?? "").toLowerCase();
+      const amount = Number(payload.amount ?? payload.donation?.amount ?? payload.data?.amount);
+      if (/(donat|success|complete|thank)/.test(eventName) && Number.isFinite(amount) && amount > 0) {
+        setRaised((current) => current + amount);
+      }
+    }
+
+    window.addEventListener("message", handleDonorboxMessage);
+    return () => window.removeEventListener("message", handleDonorboxMessage);
   }, []);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -63,7 +84,7 @@ export default function Home() {
 
     <section className="courses section" id="courses"><div className="section-head"><div><div className="section-label">02 / OUR WORK</div><h2>Find your <span>language.</span></h2></div><p>Live classes meet Monday through Thursday, July 13–23, 2026. Open a window and find where you want to start.</p></div><div className="course-grid">{courses.map((course) => <article className={`course-window ${course.color}`} key={course.name}><div className="window-bar"><span><i /><i /><i /></span><small>{course.name.toLowerCase().replaceAll(" ", "-")}.code</small><Code2 size={14} /></div><div className="course-body"><div><p className="course-level">OPEN COURSE</p><h3>{course.name}</h3><p>{course.desc}</p></div><code>{course.code}</code><a className="text-link" href="#signup">View course <ArrowUpRight size={15} /></a></div></article>)}</div></section>
 
-    <section className="donate section" id="donations"><div className="donate-copy"><div className="section-label">03 / DONATIONS</div><h2>Give access.<br /><span>Multiply impact.</span></h2><p>Our present campaign is the AICS Tech Access Initiative, where we seek to help provide education programs around the world with the technological equipment they require to bolster their students&apos; education.</p><p>Track the live campaign total and make a secure gift through the Donorbox window.</p><div className="progress-label live-total"><span>Live total in Donorbox</span><span>$15,000 goal</span></div><p className="small">In addition, we have raised close to $10,000 in charitable donations for organizations including Doctors Without Borders, Cambridge Health Alliance, Boston Racial Equity Fund, and Beth Israel Deaconess Medical Center.</p></div><div className="donorbox"><h3>Support the initiative</h3><p>Your gift equips the next generation of builders.</p><script src="https://donorbox.org/widget.js" data-paypal-express="false" /><iframe title="Donate to the AICS Tech Access Initiative" allowPaymentRequest="" frameBorder="0" height="900" name="donorbox" scrolling="no" src="https://donorbox.org/embed/technology-access-initiative" style={{ maxWidth: "500px", minWidth: "250px", maxHeight: "none" }} width="100%" /><small>Secure donation processing</small></div></section>
+    <section className="donate section" id="donations"><div className="donate-copy"><div className="section-label">03 / DONATIONS</div><h2>Give access.<br /><span>Multiply impact.</span></h2><p>Our present campaign is the AICS Tech Access Initiative, where we seek to help provide education programs around the world with the technological equipment they require to bolster their students&apos; education.</p><p>Track the live campaign total and make a secure gift through the Donorbox window.</p><div className="progress-label live-total"><span>${raised.toLocaleString()} raised</span><span>$15,000 goal</span></div><p className="small">In addition, we have raised close to $10,000 in charitable donations for organizations including Doctors Without Borders, Cambridge Health Alliance, Boston Racial Equity Fund, and Beth Israel Deaconess Medical Center.</p></div><div className="donorbox"><h3>Support the initiative</h3><p>Your gift equips the next generation of builders.</p><script src="https://donorbox.org/widget.js" data-paypal-express="false" /><iframe title="Donate to the AICS Tech Access Initiative" allowPaymentRequest="" frameBorder="0" height="900" name="donorbox" scrolling="no" src="https://donorbox.org/embed/technology-access-initiative" style={{ maxWidth: "500px", minWidth: "250px", maxHeight: "none" }} width="100%" /><small>Secure donation processing</small></div></section>
 
     <section className="testimonials section" id="testimonials"><div className="section-label">04 / TESTIMONIALS</div><h2>Proof is in the <span>process.</span></h2><div className="quote-grid">{testimonials.slice(testimonialPage * 4, testimonialPage * 4 + 4).map(([name, session, quote]) => <blockquote key={name}><div className="quote-mark">“</div><p>{quote}</p><footer><strong>{name}</strong><span>{session}</span></footer></blockquote>)}</div><div className="slide-controls" aria-label="Testimonial pages">{[0, 1].map((page) => <button key={page} className={testimonialPage === page ? "active" : ""} onClick={() => setTestimonialPage(page)} aria-label={`Show testimonial page ${page + 1}`} />)}</div></section>
 
